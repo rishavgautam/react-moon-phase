@@ -1,0 +1,124 @@
+import React from 'react';
+import moonImages from './images';
+import { getMoonPhase, getImageIndex } from './moonCalc';
+import type { MoonPhaseName, MoonPhaseData } from './moonCalc';
+
+export interface MoonPhaseProps {
+  /** Date to display the moon for. Defaults to now. */
+  date?: Date;
+  /** Override with a specific phase fraction (0–1). 0 = New Moon, 0.5 = Full Moon. */
+  phase?: number;
+  /** Size in pixels. Default: 96 */
+  size?: number;
+  /** CSS class name applied to the outer container. */
+  className?: string;
+  /** Inline styles applied to the outer container. */
+  style?: React.CSSProperties;
+  /** Alt text for the moon image. Defaults to the phase name. */
+  alt?: string;
+  /**
+   * Render prop — receives computed moon data so you can build custom UI.
+   * When provided, replaces the default image rendering.
+   */
+  children?: (data: MoonPhaseRenderData) => React.ReactNode;
+}
+
+export interface MoonPhaseRenderData extends MoonPhaseData {
+  /** Base64 data URI of the moon image */
+  imageSrc: string;
+  /** Image index (2–28) used for the current phase */
+  imageIndex: number;
+}
+
+/**
+ * Displays a realistic moon phase image based on the current date or a given date/phase.
+ *
+ * Uses 27 pre-rendered NASA Scientific Visualization Studio photographs
+ * covering the full lunar cycle.
+ *
+ * @example
+ * // Basic — shows today's moon
+ * <MoonPhase />
+ *
+ * @example
+ * // Specific date
+ * <MoonPhase date={new Date('2024-12-25')} size={120} />
+ *
+ * @example
+ * // Override phase directly (0.5 = full moon)
+ * <MoonPhase phase={0.5} size={64} />
+ *
+ * @example
+ * // Render prop for custom UI
+ * <MoonPhase date={new Date()}>
+ *   {({ imageSrc, name, illumination }) => (
+ *     <div>
+ *       <img src={imageSrc} alt={name} />
+ *       <p>{name} — {Math.round(illumination * 100)}% illuminated</p>
+ *     </div>
+ *   )}
+ * </MoonPhase>
+ */
+export function MoonPhase({
+  date,
+  phase: phaseOverride,
+  size = 96,
+  className,
+  style,
+  alt,
+  children,
+}: MoonPhaseProps) {
+  const computed = getMoonPhase(date);
+
+  const phase = phaseOverride ?? computed.phase;
+  const illumination =
+    phaseOverride != null
+      ? (1 - Math.cos(2 * Math.PI * phaseOverride)) / 2
+      : computed.illumination;
+  const name: MoonPhaseName =
+    phaseOverride != null ? getPhaseName(phaseOverride) : computed.name;
+
+  const imageIndex = getImageIndex(phase);
+  const imageSrc = moonImages[imageIndex] ?? moonImages[2];
+
+  const renderData: MoonPhaseRenderData = {
+    phase,
+    name,
+    illumination,
+    imageSrc,
+    imageIndex,
+  };
+
+  // Render prop mode
+  if (children) {
+    return <>{children(renderData)}</>;
+  }
+
+  // Default rendering — just the moon image
+  return (
+    <img
+      src={imageSrc}
+      alt={alt ?? name}
+      width={size}
+      height={size}
+      className={className}
+      style={{
+        borderRadius: '50%',
+        display: 'block',
+        ...style,
+      }}
+    />
+  );
+}
+
+/** Derive phase name from a 0–1 value */
+function getPhaseName(phase: number): MoonPhaseName {
+  if (phase < 0.033) return 'New Moon';
+  if (phase < 0.243) return 'Waxing Crescent';
+  if (phase < 0.277) return 'First Quarter';
+  if (phase < 0.493) return 'Waxing Gibbous';
+  if (phase < 0.533) return 'Full Moon';
+  if (phase < 0.743) return 'Waning Gibbous';
+  if (phase < 0.777) return 'Last Quarter';
+  return 'Waning Crescent';
+}

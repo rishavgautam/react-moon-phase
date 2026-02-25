@@ -1,0 +1,138 @@
+# moon-phase-illuminated
+
+Beautiful React moon phase component using real NASA imagery. Zero config — just drop it in.
+
+![npm](https://img.shields.io/npm/v/moon-phase-illuminated)
+![bundle size](https://img.shields.io/bundlephobia/minzip/moon-phase-illuminated)
+![license](https://img.shields.io/npm/l/moon-phase-illuminated)
+
+## Features
+
+- 27 real NASA photographs covering the full lunar cycle
+- Auto-calculates current moon phase — just render `<MoonPhase />`
+- Pass any `Date` or override with a specific `phase` (0–1)
+- Render prop API for custom UI
+- TypeScript first, tree-shakeable
+- Zero dependencies (only React as peer dep)
+- Images embedded as base64 — no external requests, no CDN, works offline
+
+## Install
+
+```bash
+npm install moon-phase-illuminated
+```
+
+## Usage
+
+### Basic — today's moon
+
+```tsx
+import { MoonPhase } from 'moon-phase-illuminated';
+
+function App() {
+  return <MoonPhase size={120} />;
+}
+```
+
+### Specific date
+
+```tsx
+<MoonPhase date={new Date('2024-12-25')} size={80} />
+```
+
+### Override phase directly
+
+```tsx
+// 0 = New Moon, 0.25 = First Quarter, 0.5 = Full Moon, 0.75 = Last Quarter
+<MoonPhase phase={0.5} size={64} />
+```
+
+### Custom styling
+
+```tsx
+<MoonPhase
+  size={100}
+  className="shadow-lg"
+  style={{ border: '2px solid #333' }}
+/>
+```
+
+### Render prop for custom UI
+
+```tsx
+<MoonPhase date={new Date()}>
+  {({ imageSrc, name, illumination, phase }) => (
+    <div style={{ textAlign: 'center' }}>
+      <img src={imageSrc} alt={name} width={96} height={96} style={{ borderRadius: '50%' }} />
+      <h3>{name}</h3>
+      <p>{Math.round(illumination * 100)}% illuminated</p>
+      <p>Phase: {phase.toFixed(3)}</p>
+    </div>
+  )}
+</MoonPhase>
+```
+
+### Use the calculation without the component
+
+```ts
+import { getMoonPhase } from 'moon-phase-illuminated';
+
+const { phase, name, illumination } = getMoonPhase(); // now
+const christmas = getMoonPhase(new Date('2024-12-25'));
+console.log(christmas.name); // e.g. "Waning Crescent"
+```
+
+## API
+
+### `<MoonPhase />` Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `date` | `Date` | `new Date()` | Date to calculate the moon phase for |
+| `phase` | `number` | — | Override with a phase fraction (0–1). Overrides `date`. |
+| `size` | `number` | `96` | Image width/height in pixels |
+| `className` | `string` | — | CSS class on the container |
+| `style` | `CSSProperties` | — | Inline styles on the container |
+| `alt` | `string` | Phase name | Alt text for the image |
+| `children` | `(data) => ReactNode` | — | Render prop for custom UI |
+
+### `getMoonPhase(date?)`
+
+Returns `MoonPhaseData`:
+
+```ts
+{
+  phase: number;        // 0–1, 0 = New Moon, 0.5 = Full Moon
+  name: MoonPhaseName;  // "New Moon" | "Waxing Crescent" | ... | "Waning Crescent"
+  illumination: number; // 0–1, 0 = dark, 1 = fully lit
+}
+```
+
+### `getImageIndex(phase)`
+
+Maps a phase fraction (0–1) to an image index (2–28). Useful if you want to load images yourself.
+
+## Phase Names
+
+| Phase Range | Name |
+|-------------|------|
+| 0.000 – 0.033 | New Moon |
+| 0.033 – 0.243 | Waxing Crescent |
+| 0.243 – 0.277 | First Quarter |
+| 0.277 – 0.493 | Waxing Gibbous |
+| 0.493 – 0.533 | Full Moon |
+| 0.533 – 0.743 | Waning Gibbous |
+| 0.743 – 0.777 | Last Quarter |
+| 0.777 – 1.000 | Waning Crescent |
+
+## How It Works
+
+The component calculates the moon's position in its ~29.53-day synodic cycle using the Julian Day method, relative to a known new moon (January 6, 2000). This maps to one of 27 photographs from NASA's Scientific Visualization Studio, each covering ~13.3° of the lunar cycle.
+
+## Credits
+
+Moon phase imagery courtesy [NASA/Goddard Space Flight Center Scientific Visualization Studio](https://svs.gsfc.nasa.gov/).
+
+## License
+
+MIT
