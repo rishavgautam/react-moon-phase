@@ -14,7 +14,9 @@ Beautiful React moon phase component using real NASA imagery. Zero config — ju
 - Render prop API for custom UI
 - TypeScript first, tree-shakeable
 - Zero dependencies (only React as peer dep)
-- Images embedded as base64 — no external requests, no CDN, works offline
+- Code-split images — only the single image needed is loaded at runtime
+- JPEG (default), WebP, and original PNG formats available
+- Custom `imageLoader` prop for full control over image loading
 
 ## Install
 
@@ -57,13 +59,29 @@ function App() {
 />
 ```
 
+### Use WebP images
+
+```tsx
+import { MoonPhase, loadMoonImageWebp } from 'moon-phase-illuminated';
+
+<MoonPhase imageLoader={loadMoonImageWebp} size={120} />
+```
+
+### Use original PNG images
+
+```tsx
+import { MoonPhase, loadMoonImagePng } from 'moon-phase-illuminated';
+
+<MoonPhase imageLoader={loadMoonImagePng} size={120} />
+```
+
 ### Render prop for custom UI
 
 ```tsx
 <MoonPhase date={new Date()}>
   {({ imageSrc, name, illumination, phase }) => (
     <div style={{ textAlign: 'center' }}>
-      <img src={imageSrc} alt={name} width={96} height={96} style={{ borderRadius: '50%' }} />
+      {imageSrc && <img src={imageSrc} alt={name} width={96} height={96} style={{ borderRadius: '50%' }} />}
       <h3>{name}</h3>
       <p>{Math.round(illumination * 100)}% illuminated</p>
       <p>Phase: {phase.toFixed(3)}</p>
@@ -71,6 +89,8 @@ function App() {
   )}
 </MoonPhase>
 ```
+
+> **Note:** `imageSrc` may be `null` while the image is loading asynchronously. Always check before rendering.
 
 ### Use the calculation without the component
 
@@ -94,7 +114,8 @@ console.log(christmas.name); // e.g. "Waning Crescent"
 | `className` | `string` | — | CSS class on the container |
 | `style` | `CSSProperties` | — | Inline styles on the container |
 | `alt` | `string` | Phase name | Alt text for the image |
-| `children` | `(data) => ReactNode` | — | Render prop for custom UI |
+| `imageLoader` | `(index: number) => Promise<string>` | JPEG loader | Custom image loader. Use `loadMoonImageWebp` for WebP or `loadMoonImagePng` for original PNG. |
+| `children` | `(data) => ReactNode` | — | Render prop for custom UI (`imageSrc` may be `null` while loading) |
 
 ### `getMoonPhase(date?)`
 
@@ -128,6 +149,8 @@ Maps a phase fraction (0–1) to an image index (2–28). Useful if you want to 
 ## How It Works
 
 The component calculates the moon's position in its ~29.53-day synodic cycle using the Julian Day method, relative to a known new moon (January 6, 2000). This maps to one of 27 photographs from NASA's Scientific Visualization Studio, each covering ~13.3° of the lunar cycle.
+
+Images are code-split into individual modules. Only the single image matching the current moon phase is loaded at runtime via dynamic `import()`, keeping the initial bundle at ~6 KB. The consumer's bundler (Webpack, Vite, Next.js, etc.) handles the splitting automatically.
 
 ## Credits
 

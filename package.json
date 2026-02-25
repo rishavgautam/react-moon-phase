@@ -1,6 +1,6 @@
 {
   "name": "moon-phase-illuminated",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "Beautiful React moon phase component using real NASA imagery. Zero config, just pass a date.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -16,6 +16,7 @@
     "dist"
   ],
   "scripts": {
+    "build:images": "node scripts/build-images.mjs",
     "build": "tsup",
     "prepublishOnly": "npm run build"
   },
@@ -39,6 +40,7 @@
     "@types/react-dom": "^19.2.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "sharp": "^0.34.5",
     "tsup": "^8.4.0",
     "typescript": "^5.7.0"
   },

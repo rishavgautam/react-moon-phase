@@ -1,7 +1,10 @@
-import React from 'react';
-import moonImages from './images';
+import React, { useState, useEffect } from 'react';
+import { loadMoonImage } from './imageLoader';
 import { getMoonPhase, getImageIndex } from './moonCalc';
 import type { MoonPhaseName, MoonPhaseData } from './moonCalc';
+
+/** Function that loads a moon image by index (2–28) and returns its data URI. */
+export type MoonImageLoader = (index: number) => Promise<string>;
 
 export interface MoonPhaseProps {
   /** Date to display the moon for. Defaults to now. */
@@ -17,15 +20,21 @@ export interface MoonPhaseProps {
   /** Alt text for the moon image. Defaults to the phase name. */
   alt?: string;
   /**
+   * Custom image loader. Defaults to the built-in JPEG loader.
+   * Use `loadMoonImageWebp` for WebP images.
+   */
+  imageLoader?: MoonImageLoader;
+  /**
    * Render prop — receives computed moon data so you can build custom UI.
    * When provided, replaces the default image rendering.
+   * Note: `imageSrc` may be `null` while the image is loading.
    */
   children?: (data: MoonPhaseRenderData) => React.ReactNode;
 }
 
 export interface MoonPhaseRenderData extends MoonPhaseData {
-  /** Base64 data URI of the moon image */
-  imageSrc: string;
+  /** Base64 data URI of the moon image, or null while loading */
+  imageSrc: string | null;
   /** Image index (2–28) used for the current phase */
   imageIndex: number;
 }
@@ -34,7 +43,8 @@ export interface MoonPhaseRenderData extends MoonPhaseData {
  * Displays a realistic moon phase image based on the current date or a given date/phase.
  *
  * Uses 27 pre-rendered NASA Scientific Visualization Studio photographs
- * covering the full lunar cycle.
+ * covering the full lunar cycle. Images are loaded on demand via dynamic
+ * imports — only the single image needed is fetched at runtime.
  *
  * @example
  * // Basic — shows today's moon
@@ -53,7 +63,7 @@ export interface MoonPhaseRenderData extends MoonPhaseData {
  * <MoonPhase date={new Date()}>
  *   {({ imageSrc, name, illumination }) => (
  *     <div>
- *       <img src={imageSrc} alt={name} />
+ *       {imageSrc && <img src={imageSrc} alt={name} />}
  *       <p>{name} — {Math.round(illumination * 100)}% illuminated</p>
  *     </div>
  *   )}
@@ -66,6 +76,7 @@ export function MoonPhase({
   className,
   style,
   alt,
+  imageLoader = loadMoonImage,
   children,
 }: MoonPhaseProps) {
   const computed = getMoonPhase(date);
@@ -79,7 +90,17 @@ export function MoonPhase({
     phaseOverride != null ? getPhaseName(phaseOverride) : computed.name;
 
   const imageIndex = getImageIndex(phase);
-  const imageSrc = moonImages[imageIndex] ?? moonImages[2];
+
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setImageSrc(null);
+    imageLoader(imageIndex).then((src) => {
+      if (!cancelled) setImageSrc(src);
+    });
+    return () => { cancelled = true; };
+  }, [imageIndex, imageLoader]);
 
   const renderData: MoonPhaseRenderData = {
     phase,
@@ -94,7 +115,9 @@ export function MoonPhase({
     return <>{children(renderData)}</>;
   }
 
-  // Default rendering — just the moon image
+  // Default rendering — show image once loaded
+  if (!imageSrc) return null;
+
   return (
     <img
       src={imageSrc}
