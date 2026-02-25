@@ -28,7 +28,7 @@
     "nasa",
     "component"
   ],
-  "author": "",
+  "author": "rishavgautam",
   "license": "MIT",
   "peerDependencies": {
     "react": ">=16.8.0",
@@ -44,6 +44,6 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/rishavgautam/react-moon-phase.git"
   }
 }
