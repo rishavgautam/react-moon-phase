@@ -10,6 +10,7 @@ Beautiful React moon phase component using real NASA imagery. Zero config — ju
 
 - 27 real NASA photographs covering the full lunar cycle
 - Auto-calculates current moon phase — just render `<MoonPhase />`
+- `<AnimatedMoon />` component for a smooth rotating moon animation
 - Pass any `Date` or override with a specific `phase` (0–1)
 - Render prop API for custom UI
 - TypeScript first, tree-shakeable
@@ -92,6 +93,19 @@ import { MoonPhase, loadMoonImagePng } from 'moon-phase-illuminated';
 
 > **Note:** `imageSrc` may be `null` while the image is loading asynchronously. Always check before rendering.
 
+### Animated rotating moon
+
+```tsx
+import { AnimatedMoon } from 'moon-phase-illuminated';
+
+// Default — 12 fps, 96px
+<AnimatedMoon size={120} />
+
+// Slower rotation with WebP images
+import { AnimatedMoon, loadMoonImageWebp } from 'moon-phase-illuminated';
+<AnimatedMoon fps={6} size={200} imageLoader={loadMoonImageWebp} />
+```
+
 ### Use the calculation without the component
 
 ```ts
@@ -116,6 +130,17 @@ console.log(christmas.name); // e.g. "Waning Crescent"
 | `alt` | `string` | Phase name | Alt text for the image |
 | `imageLoader` | `(index: number) => Promise<string>` | JPEG loader | Custom image loader. Use `loadMoonImageWebp` for WebP or `loadMoonImagePng` for original PNG. |
 | `children` | `(data) => ReactNode` | — | Render prop for custom UI (`imageSrc` may be `null` while loading) |
+
+### `<AnimatedMoon />` Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `fps` | `number` | `12` | Frames per second for the rotation |
+| `size` | `number` | `96` | Image width/height in pixels |
+| `className` | `string` | — | CSS class on the image element |
+| `style` | `CSSProperties` | — | Inline styles on the image element |
+| `alt` | `string` | `"Moon rotation"` | Alt text for the image |
+| `imageLoader` | `(index: number) => Promise<string>` | JPEG loader | Custom image loader |
 
 ### `getMoonPhase(date?)`
 

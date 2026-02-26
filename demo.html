@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AnimatedMoon Demo</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a1a;
+      color: #ccc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    h1 { color: #fff; margin-bottom: 8px; }
+    p { margin-top: 0; color: #888; }
+    #moon {
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      display: block;
+    }
+    .controls {
+      margin-top: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    label { font-size: 14px; }
+    input[type="range"] { width: 160px; }
+    #fps-value { min-width: 40px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <h1>AnimatedMoon</h1>
+  <p>26-frame smooth rotation</p>
+  <img id="moon" />
+  <div class="controls">
+    <label>Speed: <span id="fps-value">12</span> fps</label>
+    <input type="range" id="fps" min="1" max="30" value="12" />
+  </div>
+
+  <script>
+    // Waxing half: 2 (new) → 15 (full) — light grows from right
+    const waxingIndices = [];
+    for (let i = 2; i <= 15; i++) waxingIndices.push(i);
+
+    // Mirror half: 14 → 3 (reuse waxing frames, played in reverse & flipped)
+    const mirrorIndices = [];
+    for (let i = 14; i >= 3; i--) mirrorIndices.push(i);
+
+    const moon = document.getElementById('moon');
+    const fpsSlider = document.getElementById('fps');
+    const fpsLabel = document.getElementById('fps-value');
+
+    let frames = []; // { src, mirrored }
+    let frame = 0;
+    let intervalId = null;
+
+    // Preload only the waxing images (2–15)
+    Promise.all(
+      waxingIndices.map(i => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve({ index: i, src: img.src });
+          img.src = `raw-images/moon-${i}.png`;
+        });
+      })
+    ).then(loaded => {
+      const srcMap = {};
+      loaded.forEach(({ index, src }) => { srcMap[index] = src; });
+
+      // Build frame sequence: waxing (normal) + mirror (flipped reverse)
+      for (const i of waxingIndices) {
+        frames.push({ src: srcMap[i], mirrored: false });
+      }
+      for (const i of mirrorIndices) {
+        frames.push({ src: srcMap[i], mirrored: true });
+      }
+
+      startAnimation(parseInt(fpsSlider.value));
+    });
+
+    function startAnimation(fps) {
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        const f = frames[frame];
+        moon.src = f.src;
+        moon.style.transform = f.mirrored ? 'scaleX(-1)' : '';
+        frame = (frame + 1) % frames.length;
+      }, 1000 / fps);
+    }
+
+    fpsSlider.addEventListener('input', (e) => {
+      const fps = parseInt(e.target.value);
+      fpsLabel.textContent = fps;
+      startAnimation(fps);
+    });
+  </script>
+</body>
+</html>
